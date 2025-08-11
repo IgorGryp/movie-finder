@@ -1,4 +1,4 @@
-import React from 'react';
+// Displays a single movie's info
 
 const MovieCard = ({
   movie: { title, vote_average, poster_path, release_date, original_language },

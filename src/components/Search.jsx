@@ -1,3 +1,5 @@
+// Input for movie search
+
 const Search = ({ searchTerm, setSearchTerm }) => {
   return (
     <div className='search'>

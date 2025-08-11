@@ -1,3 +1,5 @@
+// Main app logic: search, display movies, fetch trending
+
 import { useEffect, useState } from 'react';
 import Search from './components/Search';
 import Spinner from './components/Spinner';
