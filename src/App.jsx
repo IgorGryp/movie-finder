@@ -6,25 +6,7 @@ import Spinner from "./components/Spinner";
 import MovieCard from "./components/MovieCard";
 import { useDebounce } from "use-debounce";
 import { getTrendingMovies, updateSearchCount } from "./appwrite";
-
-const API_BASE_URL = "https://api.themoviedb.org/3"; // Base URL for TMDB API
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY; // API key stored in environment variable
-
-// Ensure the API key is available
-if (!API_KEY) {
-  throw new Error(
-    "TMDB API key is not defined. Please set VITE_TMDB_API_KEY in .env.local"
-  );
-}
-
-// Fetch configuration with Authorization header
-const API_OPTIONS = {
-  method: "GET",
-  headers: {
-    accept: "application/json",
-    Authorization: `Bearer ${API_KEY}`,
-  },
-};
+import { API_BASE_URL, API_OPTIONS } from "./api/apiConfig"; // Import API configuration
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState(""); // Search input state
