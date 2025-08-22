@@ -5,8 +5,7 @@ import Search from "./components/Search";
 import Spinner from "./components/Spinner";
 import MovieCard from "./components/MovieCard";
 import { useDebounce } from "use-debounce";
-import { getTrendingMovies, updateSearchCount } from "./appwrite";
-import { API_BASE_URL, API_OPTIONS } from "./api/apiConfig"; // Import API configuration
+import { fetchMovies, loadTrendingMovies } from "./api/movieService";
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useState(""); // Search input state
@@ -16,72 +15,39 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState(""); // Error message state
   const [isLoading, setIsLoading] = useState(false); // Loading state to show spinner while fetching data
 
-  // Function to fetch movies from TMDB based on search term
-  // If no search term is provided, fetch popular movies
-  const fetchMovies = async (query = "") => {
-    setIsLoading(true);
-    setErrorMessage("");
-
-    try {
-      // Construct the API endpoint based on the search term
-      // If a search term is provided, use the search endpoint; otherwise, use the discover endpoint (popular movies)
-      const endpoint = query
-        ? `${API_BASE_URL}/search/movie?query=${encodeURI(query)}`
-        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
-
-      // Fetch data from TMDB
-      const response = await fetch(endpoint, API_OPTIONS);
-
-      // If the response is not OK, throw an error
-      if (!response.ok) {
-        throw new Error("Failed to fetch movies");
-      }
-
-      // Convert the response to JSON
-      const data = await response.json();
-      console.log(data);
-
-      // TMDB always returns results in "data.results"
-      // If the response indicates failure, set error message and clear movie list
-      if (!data.results || data.results.length === 0) {
-        setErrorMessage("No movies found for your search");
-        setMovieList([]);
-        return;
-      }
-
-      // Save movie list to state
-      setMovieList(data.results || []);
-
-      // If a search query was provided, update the search count in Appwrite
-      if (query && data.results.length > 0) {
-        await updateSearchCount(query, data.results[0]); // Update search count in Appwrite with the first movie result
-      }
-    } catch (error) {
-      console.error(`Error fetching movies: ${error}`);
-      setErrorMessage("Error fetching movies. Please try again later.");
-    } finally {
-      setIsLoading(false); // Set loading state to false after fetching
-    }
-  };
-
-  // Fetch trending movies from the Appwrite database
-  const loadTrendingMovies = async () => {
-    try {
-      const movies = await getTrendingMovies();
-      setTrendingMovies(movies);
-    } catch (error) {
-      console.error(`Error fetching trending movies: ${error}`);
-    }
-  };
-
-  // Fetch movies when the debounced search term changes
+  // Fetch movies when search changes
   useEffect(() => {
-    fetchMovies(debouncedSearchTerm);
+    const loadMovies = async () => {
+      setIsLoading(true);
+      setErrorMessage("");
+      try {
+        const movies = await fetchMovies(debouncedSearchTerm);
+        if (movies.length === 0) {
+          setErrorMessage("No movies found.");
+        }
+        setMovieList(movies);
+      } catch (error) {
+        setErrorMessage(error.message || "Error fetching movies.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadMovies();
   }, [debouncedSearchTerm]);
 
-  // Fetch and load trending movies when the app starts (first render)
+  // Fetch trending movies on load
   useEffect(() => {
-    loadTrendingMovies();
+    const loadTrending = async () => {
+      try {
+        const movies = await loadTrendingMovies();
+        setTrendingMovies(movies);
+      } catch (error) {
+        console.error("Error loading trending movies:", error);
+      }
+    };
+
+    loadTrending();
   }, []);
 
   return (
