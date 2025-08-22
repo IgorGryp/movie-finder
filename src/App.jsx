@@ -9,6 +9,14 @@ import { getTrendingMovies, updateSearchCount } from "./appwrite";
 
 const API_BASE_URL = "https://api.themoviedb.org/3"; // Base URL for TMDB API
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY; // API key stored in environment variable
+
+// Ensure the API key is available
+if (!API_KEY) {
+  throw new Error(
+    "TMDB API key is not defined. Please set VITE_TMDB_API_KEY in .env.local"
+  );
+}
+
 // Fetch configuration with Authorization header
 const API_OPTIONS = {
   method: "GET",
@@ -26,22 +34,27 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState(""); // Error message state
   const [isLoading, setIsLoading] = useState(false); // Loading state to show spinner while fetching data
 
-  // Fetch movies from TMDB API based on search term or trending
+  // Function to fetch movies from TMDB based on search term
+  // If no search term is provided, fetch popular movies
   const fetchMovies = async (query = "") => {
     setIsLoading(true);
     setErrorMessage("");
 
     try {
       // Construct the API endpoint based on the search term
+      // If a search term is provided, use the search endpoint; otherwise, use the discover endpoint (popular movies)
       const endpoint = query
         ? `${API_BASE_URL}/search/movie?query=${encodeURI(query)}`
         : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+
       // Fetch data from TMDB
       const response = await fetch(endpoint, API_OPTIONS);
+
       // If the response is not OK, throw an error
       if (!response.ok) {
         throw new Error("Failed to fetch movies");
       }
+
       // Convert the response to JSON
       const data = await response.json();
       console.log(data);
@@ -56,6 +69,7 @@ const App = () => {
 
       // Save movie list to state
       setMovieList(data.results || []);
+
       // If a search query was provided, update the search count in Appwrite
       if (query && data.results.length > 0) {
         await updateSearchCount(query, data.results[0]); // Update search count in Appwrite with the first movie result
@@ -96,14 +110,13 @@ const App = () => {
         {/* Hero section with hero image and search input */}
         <header>
           <img src="./hero.png" alt="Hero Banner" />
-
           <h1>
             Find <span className="text-gradient">Movies</span> You'll Enjoy
             Without the Hassle
           </h1>
-
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
+
         {/* Trending movies section */}
         {trendingMovies.length > 0 && (
           <section className="trending">
